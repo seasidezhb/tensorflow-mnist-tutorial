@@ -39,7 +39,8 @@ tf.set_random_seed(0)
 mnist = read_data_sets("data", one_hot=True, reshape=False, validation_size=0)
 
 # input X: 28x28 grayscale images, the first dimension (None) will index the images in the mini-batch
-X = tf.placeholder(tf.float32, [None, 28, 28, 1])
+# X = tf.placeholder(tf.float32, [None, 784]) 可能正确  
+X = tf.placeholder(tf.float32, [None, 28, 28, 1])    #显示placeholder不一致
 # correct answers will go here
 Y_ = tf.placeholder(tf.float32, [None, 10])
 # weights W[784, 10]   784=28*28
@@ -48,7 +49,9 @@ W = tf.Variable(tf.zeros([784, 10]))
 b = tf.Variable(tf.zeros([10]))
 
 # flatten the images into a single line of pixels
-# -1 in the shape definition means "the only possible dimension that will preserve the number of elements"
+# -1 in the shape definition means "the only possible dimension that will preserve the number of elements".
+# in practice it will be the number of images in a mini-batch.
+# -1代表的含义是不用我们自己指定这一维的大小，函数会自动计算，但列表中只能存在一个-1。
 XX = tf.reshape(X, [-1, 784])
 
 # The model
@@ -64,6 +67,7 @@ Y = tf.nn.softmax(tf.matmul(XX, W) + b)
 # so here we end up with the total cross-entropy for all images in the batch
 cross_entropy = -tf.reduce_mean(Y_ * tf.log(Y)) * 1000.0  # normalized for batches of 100 images,
                                                           # *10 because  "mean" included an unwanted division by 10
+                                                          # cross_entropy = -tf.reduce_sum(Y_ * tf.log(Y)) 
 
 # accuracy of the trained model, between 0 (worst) and 1 (best)
 correct_prediction = tf.equal(tf.argmax(Y, 1), tf.argmax(Y_, 1))
@@ -89,8 +93,9 @@ sess.run(init)
 def training_step(i, update_test_data, update_train_data):
 
     # training on batches of 100 images with 100 labels
+    #随机抓取训练数据中的100个批处理数据点，然后我们用这些数据点作为参数替换之前的占位符来运行train_step
     batch_X, batch_Y = mnist.train.next_batch(100)
-
+    
     # compute training values for visualisation
     if update_train_data:
         a, c, im, w, b = sess.run([accuracy, cross_entropy, I, allweights, allbiases], feed_dict={X: batch_X, Y_: batch_Y})
